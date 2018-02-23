@@ -1,0 +1,55 @@
+# .bash_elastic
+
+# Get all templates
+#curl -XGET 'http://elb1:9200/_template/*?pretty' > all_templates.txt
+# Delete a template
+#curl -XDELETE 'http://elb1:9200/_template/traffic_template_default?pretty'
+# Insert new template
+#curl -XPUT 'http://elb1:9200/_template/traffic_template_default?pretty' -d @traffic-default-mapping.json --header "Content-Type: application/json"
+
+alias unix="date +%s"
+alias es-status="curl -s -XGET 'http://elb1:9200/_tasks?pretty&detailed&actions=*reindex,*byquery'"
+#alias es-indices="curl -s -XGET 'http://elb1:9200/_cat/indices?v' 1> ~/indices.$(unix).json"
+alias es-delete-by-query="curl -v -XPOST 'http://elb1:9200/traffic-sla-*/_delete_by_query?pretty' -d @delete_parsefailures.json --header \"Content-Type: application/json\""
+alias es-search="curl -v -XGET 'http://elb1:9200/*/_search?q=beat.hostname:es1'"
+#curl -XPUT 'http://elb1:9200/.kibana/_settings/?pretty' -d '{ "index.blocks.write":true }' --header 'Content-Type: application/json'
+alias es-templates="curl -s -XGET 'http://elb1:9200/_template/*?pretty' > ~/all_templates.txt; less all_templates.txt"
+alias es-indices="curl -s -XGET 'http://elb1:9200/_cat/indices?v' 1> ~/indices.json; less indices.json"
+alias es-health="curl -s -XGET 'http://elb1:9200/_cluster/health?pretty' 1> ~/cluster-health.txt; less cluster-health.txt"
+alias es-state="curl -s -XGET 'http://elb1:9200/_cluster/state?pretty' 1> ~/cluster-state.txt; less cluster-state.txt"
+alias es-stats="curl -s -XGET 'http://elb1:9200/_cluster/stats?pretty' 1> ~/cluster-stats.txt; less cluster-stats.txt"
+alias es-tasks="curl -s -XGET 'http://elb1:9200/_cluster/pending_tasks?pretty' | less "
+alias es-unset-ro="curl -XPUT 'http://elb1:9200/*/_settings?pretty' -H 'Content-Type: application/json' -d' { \"index.blocks.read_only_allow_delete\": null } '"
+
+alias es-indices-gets="curl -s -XGET 'http://elb1:9200/*/_stats/get?pretty' | less"
+alias es-indices-searches="curl -s -XGET 'http://elb1:9200/*/_stats/get?pretty' | less"
+
+alias es-cat-help="curl -s -XGET 'http://elb1:9200/_cat/nodes?help'"
+alias es-index-stats="z-index-help-es; curl -s -XGET 'http://elb1:9200/_cat/nodes?v&h=n,iic,iiti,iito,iif,sqc,sqto,sqti' >> ~/cluster-indexing.txt; cat ~/cluster-indexing.txt"
+alias es-get-stats="z-get-help-es; curl -s -XGET 'http://elb1:9200/_cat/nodes?v&h=n,gc,gto,gmto,geto,gti,geti,gmti' >> ~/cluster-gets.txt; cat ~/cluster-gets.txt"
+
+function z-index-help-es() {
+    cat > cluster-indexing.txt << 'EOF'
+iic - current indexing ops
+iiti - time spent in indexing
+iito - number of indexing ops
+iif failed indexing ops
+sqc  - Current query phase ops
+sqto - Totall query ops
+sqti - time spent in query phase
+
+EOF
+}
+function z-get-help-es() {
+    cat > cluster-gets.txt << 'EOF'
+gc   - current get ops
+gto  - total get ops
+gmto - total failed gets
+geto - total successful gets
+gti  - time spent in gets
+geti - time spent in successful gets
+gmti - time spent in failed gets
+
+EOF
+}
+
