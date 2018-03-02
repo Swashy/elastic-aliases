@@ -19,7 +19,8 @@ alias es-health="curl -s -XGET 'http://elb1:9200/_cluster/health?pretty' 1> ~/cl
 alias es-state="curl -s -XGET 'http://elb1:9200/_cluster/state?pretty' 1> ~/cluster-state.txt; less cluster-state.txt"
 alias es-stats="curl -s -XGET 'http://elb1:9200/_cluster/stats?pretty' 1> ~/cluster-stats.txt; less cluster-stats.txt"
 alias es-tasks="curl -s -XGET 'http://elb1:9200/_cluster/pending_tasks?pretty' | less "
-alias es-unset-ro="curl -XPUT 'http://elb1:9200/*/_settings?pretty' -H 'Content-Type: application/json' -d' { \"index.blocks.read_only_allow_delete\": null } '"
+alias es-set-ro="curl -XPUT 'http://elb1:9200/*/_settings?pretty' -H 'Content-Type: application/json' -d' { \"index.blocks.read_only\": \"true\" } '"
+alias es-unset-ro="curl -XPUT 'http://elb1:9200/*/_settings?pretty' -H 'Content-Type: application/json' -d' { \"index.blocks.read_only\": null } '"
 
 alias es-indices-gets="curl -s -XGET 'http://elb1:9200/*/_stats/get?pretty' | less"
 alias es-indices-searches="curl -s -XGET 'http://elb1:9200/*/_stats/get?pretty' | less"
