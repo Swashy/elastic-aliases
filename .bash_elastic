@@ -1,3 +1,4 @@
+#!/bin/bash
 # .bash_elastic
 
 # Get all templates
@@ -14,6 +15,27 @@ alias es-delete-by-query="curl -v -XPOST 'http://elb1:9200/traffic-sla-*/_delete
 alias es-search="curl -v -XGET 'http://elb1:9200/*/_search?q=beat.hostname:es1'"
 #curl -XPUT 'http://elb1:9200/.kibana/_settings/?pretty' -d '{ "index.blocks.write":true }' --header 'Content-Type: application/json'
 alias es-templates="curl -s -XGET 'http://elb1:9200/_template/*?pretty' > ~/all_templates.txt; less all_templates.txt"
+
+function es-template-put () {
+    if [ "$#" -lt 2  ]; then
+            >&2 echo "usage: es-template-put <template> <file>"
+            echo "<template>: name of the template"
+            echo "<file>: the json template name in your working directory"
+            #echo "$#"
+            return 1
+    fi
+    echo curl -XPUT http://elb1:9200/_template/$1?pretty -d @$2.json --header "Content-Type: application/json"
+}
+function es-template-get () {
+    if [ "$#" -lt 1  ]; then
+            >&2 echo "usage: es-template-get <template>"
+            #echo "$#"
+            return 1
+    fi
+    curl -s -XGET http://elb1:9200/_template/$1?pretty 2>&1 | less
+}
+#alias es-template-put="curl -XPUT 'http://elb1:9200/_template/$1?pretty' -d @traffic-default-mapping.json --header "Content-Type: application/json"
+
 alias es-indices="curl -s -XGET 'http://elb1:9200/_cat/indices?v' 1> ~/indices.json; less indices.json"
 alias es-health="curl -s -XGET 'http://elb1:9200/_cluster/health?pretty' 1> ~/cluster-health.txt; less cluster-health.txt"
 alias es-state="curl -s -XGET 'http://elb1:9200/_cluster/state?pretty' 1> ~/cluster-state.txt; less cluster-state.txt"
