@@ -15,7 +15,14 @@ alias es-delete-by-query="curl -v -XPOST 'http://elb1:9200/traffic-sla-*/_delete
 alias es-search="curl -v -XGET 'http://elb1:9200/*/_search?q=beat.hostname:es1'"
 #curl -XPUT 'http://elb1:9200/.kibana/_settings/?pretty' -d '{ "index.blocks.write":true }' --header 'Content-Type: application/json'
 alias es-templates="curl -s -XGET 'http://elb1:9200/_template/*?pretty' > ~/all_templates.txt; less all_templates.txt"
-
+function es-template-delete () {
+    if [[ "$#" -lt 1  ]]; then
+            >&2 echo "usage: es-template-delete <template>"
+            echo "<template>: name of the template"
+            return 1
+    fi
+    curl -XDELETE "http://elb1:9200/_template/$1?pretty"
+}
 function es-template-put () {
     if [ "$#" -lt 2  ]; then
             >&2 echo "usage: es-template-put <template> <file>"
@@ -24,7 +31,7 @@ function es-template-put () {
             #echo "$#"
             return 1
     fi
-    echo curl -XPUT http://elb1:9200/_template/$1?pretty -d @$2.json --header "Content-Type: application/json"
+    curl -XPUT "http://elb1:9200/_template/$1?pretty" -d @$2 --header "Content-Type: application/json"
 }
 function es-template-get () {
     if [ "$#" -lt 1  ]; then
