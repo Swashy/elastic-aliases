@@ -12,7 +12,10 @@ alias unix="date +%s"
 alias es-status="curl -s -XGET 'http://elb1:9200/_tasks?pretty&detailed&actions=*reindex,*byquery'"
 #alias es-indices="curl -s -XGET 'http://elb1:9200/_cat/indices?v' 1> ~/indices.$(unix).json"
 alias es-delete-by-query="curl -v -XPOST 'http://elb1:9200/traffic-sla-*/_delete_by_query?pretty' -d @delete_parsefailures.json --header \"Content-Type: application/json\""
-alias es-search="curl -v -XGET 'http://elb1:9200/*/_search?q=beat.hostname:es1'"
+function es-search () {
+curl -XGET "http://elb1:9200/*/_search?q=$1&pretty"
+}
+
 #curl -XPUT 'http://elb1:9200/.kibana/_settings/?pretty' -d '{ "index.blocks.write":true }' --header 'Content-Type: application/json'
 alias es-templates="curl -s -XGET 'http://elb1:9200/_template/*?pretty' > ~/all_templates.txt; less all_templates.txt"
 function es-template-delete () {
@@ -35,11 +38,15 @@ function es-template-put () {
 }
 function es-template-get () {
     if [ "$#" -lt 1  ]; then
-            >&2 echo "usage: es-template-get <template>"
+            >&2 echo "usage: es-template-get <template> [save]"
             #echo "$#"
             return 1
     fi
-    curl -s -XGET http://elb1:9200/_template/$1?pretty 2>&1 | less
+    if [ "$2" == "save" ]; then
+        curl -s -XGET http://elb1:9200/_template/$1?pretty > $1.saved-template.json
+    else
+        curl -s -XGET http://elb1:9200/_template/$1?pretty 2>&1 | less
+    fi
 }
 #alias es-template-put="curl -XPUT 'http://elb1:9200/_template/$1?pretty' -d @traffic-default-mapping.json --header "Content-Type: application/json"
 
@@ -48,8 +55,39 @@ alias es-health="curl -s -XGET 'http://elb1:9200/_cluster/health?pretty' 1> ~/cl
 alias es-state="curl -s -XGET 'http://elb1:9200/_cluster/state?pretty' 1> ~/cluster-state.txt; less cluster-state.txt"
 alias es-stats="curl -s -XGET 'http://elb1:9200/_cluster/stats?pretty' 1> ~/cluster-stats.txt; less cluster-stats.txt"
 alias es-tasks="curl -s -XGET 'http://elb1:9200/_cluster/pending_tasks?pretty' | less "
-alias es-set-ro="curl -XPUT 'http://elb1:9200/*/_settings?pretty' -H 'Content-Type: application/json' -d' { \"index.blocks.read_only\": \"true\" } '"
-alias es-unset-ro="curl -XPUT 'http://elb1:9200/*/_settings?pretty' -H 'Content-Type: application/json' -d' { \"index.blocks.read_only\": null } '"
+#alias es-set-ro="curl -XPUT 'http://elb1:9200/*/_settings?pretty' -H 'Content-Type: application/json' -d' { \"index.blocks.read_only\": \"true\" } '"
+function es-set-ro() {
+curl -XPUT "elb1:9200/_cluster/settings" -H 'Content-Type: application/json' -d'
+{
+  "persistent": {
+    "cluster.routing.allocation.enable": "none"
+  }
+}'
+echo "Shard allocation disabled!"
+echo "Performing sync flush, please wait..."
+curl -XPOST "elb1:9200/_flush/synced"
+echo "Sync flush complete!"
+curl -XPUT "elb1:9200/*/_settings?pretty" -H 'Content-Type: application/json' -d'
+{ 
+  "index.blocks.read_only": "true"
+}'
+echo "All indices set to read_only!"
+echo "done."
+}
+#alias es-unset-ro="curl -XPUT 'http://elb1:9200/*/_settings?pretty' -H 'Content-Type: application/json' -d' { \"index.blocks.read_only\": null } '"
+function es-unset-ro() {
+curl -XPUT "elb1:9200/*/_settings?pretty" -H 'Content-Type: application/json' -d'
+{ 
+  "index.blocks.read_only": "null"
+}'
+curl -XPUT "elb1:9200/_cluster/settings" -H 'Content-Type: application/json' -d'
+{
+  "persistent": {
+    "cluster.routing.allocation.enable": "all"
+  }
+}'
+echo "finished"
+}
 
 alias es-indices-gets="curl -s -XGET 'http://elb1:9200/*/_stats/get?pretty' | less"
 alias es-indices-searches="curl -s -XGET 'http://elb1:9200/*/_stats/get?pretty' | less"
